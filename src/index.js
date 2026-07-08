@@ -7,6 +7,14 @@ import connectDb from "./db/index.js";
 
  
 connectDb()
+.then(()=>{
+    app.listen(process.env.PORT || 8000,()=>{
+        console.log(`server is runing :${process.env.PORT}`)
+    });
+})
+.catch((err)=>{
+    console.log("MONOGO DB connection is failed !!!",err);
+})
 
 /*
 import express from "express";
