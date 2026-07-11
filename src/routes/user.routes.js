@@ -1,8 +1,18 @@
 import { Router } from "express";
 import { resiterUser } from "../controllers/user.controller.js";
+import { upload } from "../middlewares/multer.middlewares.js";
 const router = Router();
 
-router.route("/register").post(resiterUser)
+router.route("/register").post(upload.fields([
+    {
+        name:"avatar",
+        maxCount:1
+    },
+    {
+        name:"covetImage",
+        maxCount:1
+    }
+]),resiterUser)
 
 
 
