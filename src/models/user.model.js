@@ -69,7 +69,7 @@ userSchema.method.generateAccessToken = function(){
     )
 
 }
-userSchema.method.generateRefersToken = function(){
+userSchema.method.generateRefersToken =  function(){
     return jwt.sign( 
         {
             _id:this._id,

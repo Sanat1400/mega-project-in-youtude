@@ -1,0 +1,8 @@
+$kind: http-request
+name: https://localhost:8000/api/v1/users/register
+url: https://localhost:8000/api/v1/users/register
+method: POST
+body:
+  type: json
+  content: ""
+order: 1783777218100
