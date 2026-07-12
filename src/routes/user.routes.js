@@ -9,7 +9,7 @@ router.route("/register").post(upload.fields([
         maxCount:1
     },
     {
-        name:"covetImage",
+        name:"coverImage",
         maxCount:1
     }
 ]),resiterUser)
