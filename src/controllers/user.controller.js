@@ -3,6 +3,23 @@ import {ApiError} from "../utils/APiError.js"
 import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from  "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+
+const generateAccessAndRefershToken = async(userId)=>
+{
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+        user.refreshToken = refreshToken
+        await user.save({validateBeforeSave:false})
+        return {accessToken ,refershToken}
+
+    } catch (error) {
+        throw new ApiError(500,"something went worg while genrate the referseh token ")
+        
+    }
+}
+
 const resiterUser = asyncHandle(async(req,res)=>{
      // get user detail from frontend 
      // vaildation -->> not empty 
@@ -84,10 +101,81 @@ const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
      return res.status(201).json(
         new ApiResponse(200,createduser,"user resisted sucessfully ")
-     )
-      
+     )   
 })
-export {resiterUser}
+
+
+const loginUser = asyncHandle(async(req,res)=> {
+    // req boby -> data
+    // username or email 
+    // find the user
+    // password check
+    // access and referseh token 
+    // send cookiee 
+    const {email,username,password} = req.body
+    if(!email || !username){
+        throw new ApiError(400,"username or  password are required")
+    }
+
+    const user = await User.findOne({
+        $or : [{username},{email}]
+    })
+
+    if(!user){
+        throw new ApiError(404 ,"user not find")
+    }
+
+    const isPasswordValid =  await user.isPasswordCorrect(password)
+
+     if(!isPasswordValid){
+        throw new ApiError(401 ,"invalid user ")
+    }
+
+    const {accessToken,refreshToken}=await generateAccessAndRefershToken(user._id)
+    const loggedInUser   =  await User.findById(user._id)
+    select("-password -refreshToken")
+    const option = {
+        httpOnly :true,
+        secure :true
+    }
+    return res.status(200).cookie("accessToken",accessToken,option).cookie("refreshToken",refreshToken,option)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user:loggedInUser,accessToken,refreshToken
+                
+            },
+            "user logged in succesfully "
+        )
+    )   
+})
+
+
+
+const logoutUser = asyncHandle(async (req,res)=>{
+    await   User.findByIdAndUpdate(req.user._id,
+    {
+        $set:{
+            refershToken:undefined
+        }
+
+    },
+    {
+        new :true 
+    }
+    ) 
+     const option = {
+        httpOnly :true,
+        secure :true
+    }
+    return res.status(200).clearCookie("accessToken",option)
+    .clearCookie("refreshToken",option).json(new ApiResponse(200,{},"user Logged Out"))      
+})
+export {resiterUser,
+    loginUser,
+    logoutUser
+}
 
 
 
