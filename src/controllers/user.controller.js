@@ -3,6 +3,7 @@ import {ApiError} from "../utils/APiError.js"
 import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from  "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
+import jwt from "jsonwebtoken"
 
 const generateAccessAndRefershToken = async(userId)=>
 {
@@ -12,10 +13,11 @@ const generateAccessAndRefershToken = async(userId)=>
         const refreshToken = user.generateRefreshToken()
         user.refreshToken = refreshToken
         await user.save({validateBeforeSave:false})
-        return {accessToken ,refershToken}
+        return {accessToken ,refreshToken}
 
     } catch (error) {
-        throw new ApiError(500,"something went worg while genrate the referseh token ")
+        console.log(error)
+        throw error;
         
     }
 }
@@ -113,7 +115,7 @@ const loginUser = asyncHandle(async(req,res)=> {
     // access and referseh token 
     // send cookiee 
     const {email,username,password} = req.body
-    if(!email || !username){
+    if(!(email || username)){
         throw new ApiError(400,"username or  password are required")
     }
 
@@ -133,7 +135,7 @@ const loginUser = asyncHandle(async(req,res)=> {
 
     const {accessToken,refreshToken}=await generateAccessAndRefershToken(user._id)
     const loggedInUser   =  await User.findById(user._id)
-    select("-password -refreshToken")
+    .select("-password -refreshToken")
     const option = {
         httpOnly :true,
         secure :true
@@ -157,7 +159,7 @@ const logoutUser = asyncHandle(async (req,res)=>{
     await   User.findByIdAndUpdate(req.user._id,
     {
         $set:{
-            refershToken:undefined
+            refreshToken:undefined
         }
 
     },
@@ -172,9 +174,53 @@ const logoutUser = asyncHandle(async (req,res)=>{
     return res.status(200).clearCookie("accessToken",option)
     .clearCookie("refreshToken",option).json(new ApiResponse(200,{},"user Logged Out"))      
 })
+
+
+const refreshAcessToken = asyncHandle(async(req,res)=>{
+    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+    if(!incomingRefreshToken){
+        throw new ApiError(401,"unauthorized request")
+    }
+   try {
+     const decodedToken = jwt.verify(
+         incomingRefreshToken,
+         process.env.REFRESH_TOKEN_SECRET
+     )
+     const user =  await User.findById(decodedToken?._id);
+      if(!user){
+         throw new ApiError(401,"Invail refer token ")
+     }
+ 
+     if(incomingRefreshToken !== user?.refreshToken){
+          throw new ApiError(401," Refersh Token is exprire ")
+     }
+       
+     const option ={
+         httpOnly : true,
+         secure : true
+     }
+     const {accessToken,newrefreshToken} =await generateAccessAndRefershToken(user._id)
+ 
+     return res
+     .status(200)
+     .cookie("acessToken",accessToken,option)
+     .cookie("refershToken",newrefreshToken,option)
+     .json(
+         new ApiResponse(
+             200,
+             {accessToken,refreshToken:newrefreshToken},
+             "acess Token refresh"
+         )
+     )
+   } catch (error) {
+    throw new ApiError(401,"Invalid refersh Token ")
+    
+   }
+})
 export {resiterUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAcessToken
 }
 
 
