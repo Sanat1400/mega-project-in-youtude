@@ -152,9 +152,6 @@ const loginUser = asyncHandle(async(req,res)=> {
         )
     )   
 })
-
-
-
 const logoutUser = asyncHandle(async (req,res)=>{
     await   User.findByIdAndUpdate(req.user._id,
     {
@@ -174,8 +171,6 @@ const logoutUser = asyncHandle(async (req,res)=>{
     return res.status(200).clearCookie("accessToken",option)
     .clearCookie("refreshToken",option).json(new ApiResponse(200,{},"user Logged Out"))      
 })
-
-
 const refreshAcessToken = asyncHandle(async(req,res)=>{
     const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
     if(!incomingRefreshToken){
@@ -217,7 +212,6 @@ const refreshAcessToken = asyncHandle(async(req,res)=>{
     
    }
 })
-
 const changeCurrentpassword = asyncHandle(async(req,res)=>{
         const{oldPassword, newPassword}  = req.body
          const user = await User.findById(req.user?._id)
@@ -231,9 +225,6 @@ const changeCurrentpassword = asyncHandle(async(req,res)=>{
 
          return res.status(200).json(new ApiResponse(200,{},"password change sucessfully "))
 })
-
-
-
 const getCurrentUser = asyncHandle(async(req,res)=>{
     return res
     .status(200)
@@ -321,6 +312,81 @@ const updateUserAvatar = asyncHandle(async(req,res)=>
  })
 
 
+ const getUserChannelProfile = asyncHandle(async(req,res)=>{
+    const {username} = req.params
+    if(!username?.trim()){
+        throw new ApiError(400,"username is not present")
+    }
+
+      const channel =  await User.aggregate([
+        {
+            $match:{
+                username : username?.toLowerCase()
+            }
+        },
+        {
+            $lookup:{
+                from:"subscription",
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from:"subscription",
+                localField:"_id",
+                foreignField:" subscriber",
+                as:"SubscribedTo"
+
+            }
+        },
+        {
+            $addFields:{
+                subscribersCount:{
+                    $size: "$subscribers"
+                },
+                channelSubscribedCount: {
+                    $size:"$SubscribedTo"
+
+                },
+                isSubcribed:{
+                    $cond:{
+                        if: {$in : [req.user?._id,"$subscribers.subscriber"]},
+                        then:true,
+                        else:false
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                fullName :1,
+                username:1,
+                subscribersCount :1,
+                  channelSubscribedCount:1,
+                  avatar:1,
+                  coverImage:1,
+                  email:1,
+                  isSubcribed:1
+            }
+        }
+
+      ])
+     console.log(channel)
+
+     if(!channel?.length){
+        throw new ApiError(404,"channel does not exit")
+     }
+
+     return res 
+     .status(200)
+     .json(
+        new ApiResponse(200,channel[0],"User channel fetched Succesfully")
+     )
+
+ })
+
 
 export {resiterUser,
     loginUser,
@@ -335,4 +401,3 @@ export {resiterUser,
 
 
 
-      
