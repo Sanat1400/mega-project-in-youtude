@@ -9,5 +9,4 @@ const subscription = new mongoose.Schema({
         ref : "User"
     }
 },{timestamps:true})
-
 export const subscription = new mongoose.model("subscription",subscription);
