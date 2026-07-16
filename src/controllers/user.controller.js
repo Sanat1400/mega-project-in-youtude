@@ -94,17 +94,7 @@ const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 } catch (err) {
     console.log("Create Error:", err);
     throw err;
-}
-     const createduser = await User.findById(user._id).select(
-        "-password -refreshToken"
-     )
-     if(!createduser){
-        throw new ApiError(500,"something went wrrong resiter the user")
-     }
-
-     return res.status(201).json(
-        new ApiResponse(200,createduser,"user resisted sucessfully ")
-     )   
+}  
 })
 
 
@@ -154,10 +144,10 @@ const loginUser = asyncHandle(async(req,res)=> {
     )   
 })
 const logoutUser = asyncHandle(async (req,res)=>{
-    await   User.findByIdAndUpdate(req.user._id,
+    await  User.findByIdAndUpdate(req.user._id,
     {
-        $set:{
-            refreshToken:undefined
+        $unset:{
+            refreshToken:1
         }
 
     },
@@ -440,14 +430,14 @@ const updateUserAvatar = asyncHandle(async(req,res)=>
      )
 
  }) 
-  
+   
 
 export {resiterUser,
     loginUser,
     logoutUser,
     refreshAcessToken,
     changeCurrentpassword,
-    getCurrentUser,
+    getCurrentUser,  
     updateAccountDetails,
     updateUserAvatar,
     updateUsercoverImage,
