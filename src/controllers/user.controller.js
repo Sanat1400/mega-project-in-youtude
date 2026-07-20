@@ -318,11 +318,11 @@ const updateUserAvatar = asyncHandle(async(req,res)=>
         {
             $lookup:{
                 from:"subscription",
-                localField:"_id",
+                localField:"_id", 
                 foreignField:"channel",
                 as:"subscribers"
             }
-        },
+        }, 
         {
             $lookup:{
                 from:"subscription",
@@ -364,7 +364,7 @@ const updateUserAvatar = asyncHandle(async(req,res)=>
         }
 
       ])
-     console.log(channel)
+     console.log(channel) 
 
      if(!channel?.length){
         throw new ApiError(404,"channel does not exit")
@@ -447,3 +447,50 @@ export {resiterUser,
 
 
 
+// $match, $project , $group , $lookup 
+
+// // --> $group 
+//  db.orders.aggregate([{
+//     $group:{
+//         _id:"$category",
+//         totalPrice:{$sum:"$price"}
+//     }
+// }])  --> push into array 
+
+
+// $lookup ->>>> used to join document  two collection and main work is fetch the data from collecton 
+
+// ----->>>>-----
+// from ->> name of the collection to join with
+// localField --> Feild from the input (source) collection 
+// foreignFeild -->  Feild from the "from" collection to match against 
+// as -->the named of the new array feild   that will store matched data
+
+// users collectionj 
+// [
+//     {"_id":1,"name":"Danish","city":"Delhi"},
+//     {"_id":2,"name":"Aliza","city":"mumbai"},
+//     {"_id":3,"name":"Ahmed","city":"Kolkata"}
+// ]
+// orders collection 
+// [
+//     {"-id":101,"product":"laptop","price":"40000","user_id":"1"},
+//     {"-id":102,"product":"phone","price":"4000000","user_id":"1"},
+//     {"-id":103,"product":"Book","price":"20000","user_id":"2"}
+// ]
+
+// Aggregation Query
+// db.user.aggregate{[
+//     {
+//         $lookup:{
+//              from:"orders",     // target Collection 
+//              localField:"_id",  // feild in user collection 
+//              foreignField:"user_id", // field in order collection 
+//              as:"userOrder"  // output array field name 
+//         }
+//     }
+// ]}
+
+
+
+ 
